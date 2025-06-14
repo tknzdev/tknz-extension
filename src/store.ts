@@ -1245,8 +1245,8 @@ export const useStore = create<WalletState>((set, get) => ({
     }
     const data = await response.json();
     if (data.error) throw new Error(data.error);
-    const { depositSol, depositLamports, feeSol, feeLamports, initialSupply, initialSupplyRaw, pool, decimals } = data;
-    const preview = { depositSol, depositLamports, feeSol, feeLamports, initialSupply, initialSupplyRaw, pool, decimals };
+    const { depositSol, depositLamports, feeSol, feeLamports, initialSupply, initialSupplyRaw, pool, decimals, poolConfigKey } = data;
+    const preview = { depositSol, depositLamports, feeSol, feeLamports, initialSupply, initialSupplyRaw, pool, decimals, poolConfigKey };
     set({ previewMeteoraData: preview });
     return preview;
   },
@@ -1312,7 +1312,8 @@ export const useStore = create<WalletState>((set, get) => ({
       depositLamports,
       feeSol,
       feeLamports,
-      isLockLiquidity
+      isLockLiquidity,
+      poolConfigKey,
     } = data as any;
     if (transactions.length === 0) {
       throw new Error('Expected at least one transaction from server (got none)');
@@ -1381,7 +1382,8 @@ export const useStore = create<WalletState>((set, get) => ({
       depositLamports,
       feeSol,
       feeLamports,
-      isLockLiquidity
+      isLockLiquidity,
+      poolConfigKey,
     };
   },
   // Send native SOL or SPL token to a recipient address
