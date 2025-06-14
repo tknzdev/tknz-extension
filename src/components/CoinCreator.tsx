@@ -996,6 +996,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
           mint: res.mint,
           ata: res.ata,
           pool: res.pool,
+          poolConfigKey: res.poolConfigKey,
           metadataUri: res.metadataUri,
           decimals: res.decimals,
           initialSupply: res.initialSupply,
