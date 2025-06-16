@@ -1040,6 +1040,7 @@ export const useStore = create<WalletState>((set, get) => ({
         })
       });
       if (!response.ok) throw new Error(`Failed to create transaction: ${response.statusText}`);
+
       const data = await response.arrayBuffer();
       const tx = VersionedTransaction.deserialize(new Uint8Array(data));
       // Add signatures using addSignature to preserve existing ones
@@ -1050,6 +1051,7 @@ export const useStore = create<WalletState>((set, get) => ({
         const walletSig = nacl.sign.detached(messageData, activeWallet.keypair.secretKey);
         tx.addSignature(activeWallet.keypair.publicKey, walletSig);
       }
+      
       // Send raw signed versioned transaction
       const rawTx = tx.serialize();
       const signature = await web3Connection.sendRawTransaction(rawTx);
