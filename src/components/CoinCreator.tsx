@@ -1011,7 +1011,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
             name: params.name,
             ticker: params.ticker,
             description: params.description,
-            imageUrl: params.imageUrl || '',
+            imageUrl: res.tokenMetadata?.imageUrl || '',
             twitter: params.twitter,
             telegram: params.telegram,
             websiteUrl: params.websiteUrl
@@ -1480,7 +1480,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
                   <DollarSign className="w-4 h-4 text-cyber-green" />
                   <span className="text-sm font-terminal text-cyber-pink">Investment Amount</span>
                 </div>
-                <span className="text-xs font-terminal text-cyber-purple">Pump.Fun Fee: 0.02 SOL</span>
+                <span className="text-xs font-terminal text-cyber-purple">Fee: 0.01 SOL</span>
               </div>
               
               <div className="flex items-center">
@@ -1578,7 +1578,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
               <div className="crypto-card p-6 space-y-4 border-cyber-green animate-fadeInUp">
                 <h3 className="text-lg font-terminal text-cyber-green uppercase tracking-wide">🎉 Coin Created Successfully!</h3>
                 <div className="space-y-2">
-                  <p className="text-sm font-terminal text-white">Your coin is now live on Pump.fun!</p>
+                  <p className="text-sm font-terminal text-white">Your coin is now live on tknz.fun!</p>
                   <a
                     href={createdCoin.pumpUrl}
                     target="_blank"
@@ -1586,7 +1586,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
                     className="btn-primary w-full flex items-center justify-center space-x-2 font-terminal"
                   >
                     <Globe className="w-4 h-4" />
-                    <span>VIEW ON PUMP.FUN</span>
+                    <span>VIEW ON TKNZ.FUN</span>
                   </a>
                 </div>
               </div>
@@ -1631,7 +1631,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
               ) : (
                 <div className="flex items-center justify-center space-x-2 w-full h-full">
                   <Zap className="w-5 h-5" />
-                  <span>CREATE COIN</span>
+                  <span>CREATE x COIN</span>
                 </div>
               )}
             </button>
