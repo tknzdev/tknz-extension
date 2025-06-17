@@ -31,6 +31,7 @@ export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose 
 
   const handleConfirm = async () => {
     try {
+      
       setSigning(true);
 
       const signed: string[] = transactions.map((b64) => {
