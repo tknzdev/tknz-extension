@@ -175,7 +175,49 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
     })();
     return true;
   }
-  // Handle SDK token create initialization from page
+  else if (message.type === 'CONNECT') {
+    (async () => {
+      try {
+        // Open extension popup for connect UI
+        await chrome.action.openPopup();
+      } catch (e) {
+        console.error('Failed to open popup for connect:', e);
+      }
+      chrome.storage.local.get(['wallets', 'activeWalletId'], (data) => {
+        const wallets: any[] = Array.isArray(data.wallets) ? data.wallets : [];
+        const activeId: string = data.activeWalletId;
+        const active = wallets.find(w => w.id === activeId);
+        sendResponse({ success: true, publicKey: active?.publicKey });
+      });
+    })();
+    return true;
+  }
+  else if (message.type === 'SIGN_TRANSACTION') {
+    // Forward to UI for confirmation/signing
+    chrome.runtime.sendMessage({ type: 'SHOW_SIGN_TRANSACTION', transaction: message.transaction });
+    // UI will send back SIGN_TRANSACTION_RESPONSE via content script
+    sendResponse({ success: true });
+    return true;
+  }
+  else if (message.type === 'SIGN_ALL_TRANSACTIONS') {
+    chrome.runtime.sendMessage({ type: 'SHOW_SIGN_ALL_TRANSACTIONS', transactions: message.transactions });
+    sendResponse({ success: true });
+    return true;
+  }
+  else if (message.type === 'SIGN_MESSAGE') {
+    chrome.runtime.sendMessage({ type: 'SHOW_SIGN_MESSAGE', message: message.message });
+    sendResponse({ success: true });
+    return true;
+  }
+  else if (message.type === 'GET_PUBLIC_KEY') {
+    chrome.storage.local.get(['wallets', 'activeWalletId'], (data) => {
+      const wallets: any[] = Array.isArray(data.wallets) ? data.wallets : [];
+      const active = wallets.find(w => w.id === data.activeWalletId);
+      sendResponse({ success: true, publicKey: active?.publicKey });
+    });
+    return true;
+  }
+  // Initialize token creation via content script SDK
   else if (message.type === 'INIT_TOKEN_CREATE') {
     if (!isValidForCoinCreateTrigger(message.options)) {
       console.log('invalid coin create trigger');
@@ -191,8 +233,6 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
         console.error('Failed to populate token:', e);
       }
 
-      // If sidebar is already active, just send the message
-      // Otherwise open popup - never programmatically open sidebar
       if (!isSidebarMsg) {
         try {
           await chrome.action.openPopup();
@@ -204,7 +244,6 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
       }
 
       chrome.runtime.sendMessage({ type: 'SDK_TOKEN_CREATE', options, isSidebar: isSidebarMsg });
-      // Respond to sender that initialization succeeded
       sendResponse({ success: true });
     })();
 
@@ -217,24 +256,32 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
 // Inject SDK into page context
 chrome.runtime.onMessage.addListener((message, sender) => {
   if (message.type === 'INJECT_SDK' && sender.tab?.id) {
+    console.log(`BACKGROUND: Received INJECT_SDK for tab ${sender.tab.id}`);
     chrome.scripting.executeScript({
       target: { tabId: sender.tab.id, allFrames: true },
       world: 'MAIN',
       func: () => {
-        ;(window as any).tknz = {
-          initTokenCreate: (coin: any) => {
-            // eslint-disable-next-line no-console
-            console.log('initTokenCreate', coin);
-            const data = { source: 'tknz', type: 'INIT_TOKEN_CREATE', options: coin };
-            // If in an iframe, post message to parent; otherwise post to self
-            if (window.parent && window.parent !== window) {
-              window.parent.postMessage(data, '*');
-            } else {
-              window.postMessage(data, '*');
-            }
+        console.log('CONTENT SCRIPT: injecting window.tknz SDK');
+        const post = (data: any) => {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage(data, '*');
+          } else {
+            window.postMessage(data, '*');
           }
         };
+        (window as any).tknz = {
+          initTokenCreate: (coin: any) => post({ source: 'tknz', type: 'INIT_TOKEN_CREATE', options: coin }),
+          connect: () => post({ source: 'tknz', type: 'CONNECT' }),
+          signTransaction: (tx: string) => post({ source: 'tknz', type: 'SIGN_TRANSACTION', transaction: tx }),
+          signAllTransactions: (txs: string[]) => post({ source: 'tknz', type: 'SIGN_ALL_TRANSACTIONS', transactions: txs }),
+          signMessage: (msg: string) => post({ source: 'tknz', type: 'SIGN_MESSAGE', message: msg }),
+          getPublicKey: () => post({ source: 'tknz', type: 'GET_PUBLIC_KEY' })
+        };
       }
+    }).then(() => {
+      console.log(`BACKGROUND: Successfully injected SDK into tab ${sender.tab.id}`);
+    }).catch((err) => {
+      console.error(`BACKGROUND: Failed to inject SDK into tab ${sender.tab.id}`, err);
     });
   }
 });
