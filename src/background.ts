@@ -193,15 +193,79 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
     return true;
   }
   else if (message.type === 'SIGN_TRANSACTION') {
-    // Forward to UI for confirmation/signing
-    chrome.runtime.sendMessage({ type: 'SHOW_SIGN_TRANSACTION', transaction: message.transaction });
-    // UI will send back SIGN_TRANSACTION_RESPONSE via content script
-    sendResponse({ success: true });
+    // Forward to UI for confirmation/signing. We keep the response callback
+    // open so that we can resolve it once the user confirms in the popup UI.
+    // The listener must return `true` to signal asynchronous response.
+
+    const requestId = `req_${Date.now()}_${Math.random()}`;
+
+    // Relay the transaction to the extension UI (popup / side panel).
+    chrome.runtime.sendMessage({
+      type: 'SHOW_SIGN_TRANSACTION',
+      requestId,
+      transaction: message.transaction,
+    });
+
+    // Ensure the popup window is visible for user confirmation.
+    chrome.action.openPopup().catch(err => {
+      console.error('Failed to open popup for transaction signing:', err);
+    });
+
+    // Store resolver so we can respond later once signing is complete.
+    const resolver = (responseMsg: any) => {
+      if (
+        responseMsg?.type === 'SIGN_TRANSACTION_CONFIRMED' &&
+        responseMsg.requestId === requestId
+      ) {
+        // Send the signed tx back to content script.
+        sendResponse({ signedTransaction: responseMsg.signedTransaction });
+        chrome.runtime.onMessage.removeListener(resolver);
+      }
+      if (
+        responseMsg?.type === 'SIGN_TRANSACTION_REJECTED' &&
+        responseMsg.requestId === requestId
+      ) {
+        sendResponse({});
+        chrome.runtime.onMessage.removeListener(resolver);
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(resolver);
+
+    // Indicate async response.
     return true;
   }
   else if (message.type === 'SIGN_ALL_TRANSACTIONS') {
-    chrome.runtime.sendMessage({ type: 'SHOW_SIGN_ALL_TRANSACTIONS', transactions: message.transactions });
-    sendResponse({ success: true });
+    const requestId = `req_${Date.now()}_${Math.random()}`;
+    chrome.runtime.sendMessage({
+      type: 'SHOW_SIGN_ALL_TRANSACTIONS',
+      requestId,
+      transactions: message.transactions,
+    });
+
+    chrome.action.openPopup().catch(err => {
+      console.error('Failed to open popup for transaction signing:', err);
+    });
+
+    const resolver = (responseMsg: any) => {
+      if (
+        responseMsg?.type === 'SIGN_ALL_TRANSACTIONS_CONFIRMED' &&
+        responseMsg.requestId === requestId
+      ) {
+        sendResponse({ signedTransactions: responseMsg.signedTransactions });
+        chrome.runtime.onMessage.removeListener(resolver);
+      }
+      if (
+        responseMsg?.type === 'SIGN_ALL_TRANSACTIONS_REJECTED' &&
+        responseMsg.requestId === requestId
+      ) {
+        sendResponse({});
+        chrome.runtime.onMessage.removeListener(resolver);
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(resolver);
+
     return true;
   }
   else if (message.type === 'SIGN_MESSAGE') {
