@@ -661,28 +661,85 @@ function startSelectionMode(isSidebar: boolean) {
 }
 
 window.addEventListener('message', async (event) => {
-  if (event.data?.source !== 'tknz' || event.data?.type !== 'INIT_TOKEN_CREATE') return;
-
+  if (event.data?.source !== 'tknz') return;
+  const msgType = event.data.type;
   const sidebarActive = await isSidebarActive();
-  
-  chrome.runtime.sendMessage({
-    type: 'INIT_TOKEN_CREATE',
-    options: event.data.options,
-    isSidebar: sidebarActive
-  }).then((response) => {
-    if (chrome.runtime.lastError) {
-      console.error('Messaging error:', chrome.runtime.lastError.message);
-      return;
-    }
-
-    if (!response?.success) {
-      console.error('Failed: ', response.error);
-    }
-  });
+  if (msgType === 'INIT_TOKEN_CREATE') {
+    chrome.runtime.sendMessage({
+      type: 'INIT_TOKEN_CREATE',
+      options: event.data.options,
+      isSidebar: sidebarActive
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('Messaging error:', chrome.runtime.lastError.message);
+        return;
+      }
+      if (!response?.success) {
+        console.error('INIT_TOKEN_CREATE failed:', response.error);
+      }
+    });
+  }
+  else if (msgType === 'CONNECT') {
+    chrome.runtime.sendMessage({ type: 'CONNECT' }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('CONNECT messaging error:', chrome.runtime.lastError.message);
+        return;
+      }
+      const data = {
+        source: 'tknz',
+        type: 'CONNECT_RESPONSE',
+        success: response?.success,
+        publicKey: response?.publicKey,
+      };
+      window.postMessage(data, '*');
+    });
+  }
+  else if (msgType === 'SIGN_TRANSACTION') {
+    chrome.runtime.sendMessage({ type: 'SIGN_TRANSACTION', transaction: event.data.transaction }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('SIGN_TRANSACTION messaging error:', chrome.runtime.lastError.message);
+        return;
+      }
+      const data = { source: 'tknz', type: 'SIGN_TRANSACTION_RESPONSE', signedTransaction: response?.signedTransaction };
+      window.postMessage(data, '*');
+    });
+  }
+  else if (msgType === 'SIGN_ALL_TRANSACTIONS') {
+    chrome.runtime.sendMessage({ type: 'SIGN_ALL_TRANSACTIONS', transactions: event.data.transactions }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('SIGN_ALL_TRANSACTIONS messaging error:', chrome.runtime.lastError.message);
+        return;
+      }
+      const data = { source: 'tknz', type: 'SIGN_ALL_TRANSACTIONS_RESPONSE', signedTransactions: response?.signedTransactions };
+      window.postMessage(data, '*');
+    });
+  }
+  else if (msgType === 'SIGN_MESSAGE') {
+    chrome.runtime.sendMessage({ type: 'SIGN_MESSAGE', message: event.data.message }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('SIGN_MESSAGE messaging error:', chrome.runtime.lastError.message);
+        return;
+      }
+      const data = { source: 'tknz', type: 'SIGN_MESSAGE_RESPONSE', signedMessage: response?.signedMessage };
+      window.postMessage(data, '*');
+    });
+  }
+  else if (msgType === 'GET_PUBLIC_KEY') {
+    chrome.runtime.sendMessage({ type: 'GET_PUBLIC_KEY' }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('GET_PUBLIC_KEY messaging error:', chrome.runtime.lastError.message);
+        return;
+      }
+      const data = { source: 'tknz', type: 'GET_PUBLIC_KEY_RESPONSE', publicKey: response?.publicKey };
+      window.postMessage(data, '*');
+    });
+  }
 });
 
 // Notify to inject SDK if available (avoid errors when chrome is undefined)
+// Notify to inject SDK if available
 if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.sendMessage === 'function') {
+  console.log('CONTENT SCRIPT: request SDK injection');
   chrome.runtime.sendMessage({ type: 'INJECT_SDK' });
 }
 
