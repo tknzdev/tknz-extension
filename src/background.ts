@@ -199,17 +199,25 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
 
     const requestId = `req_${Date.now()}_${Math.random()}`;
 
-    // Relay the transaction to the extension UI (popup / side panel).
-    chrome.runtime.sendMessage({
-      type: 'SHOW_SIGN_TRANSACTION',
-      requestId,
-      transaction: message.transaction,
-    });
+    // First open the popup so that the UI page is ready to receive the
+    // forthcoming message.  Only after the popup promise resolves do we send
+    // the sign-transaction request.
 
-    // Ensure the popup window is visible for user confirmation.
-    chrome.action.openPopup().catch(err => {
-      console.error('Failed to open popup for transaction signing:', err);
-    });
+    (async () => {
+      try {
+        await chrome.action.openPopup();
+      } catch (err) {
+        console.error('Failed to open popup for transaction signing:', err);
+      }
+
+      setTimeout(() => {
+        chrome.runtime.sendMessage({
+          type: 'SHOW_SIGN_TRANSACTION',
+          requestId,
+          transaction: message.transaction,
+        });
+      }, 300); // give popup time to load script
+    })();
 
     // Store resolver so we can respond later once signing is complete.
     const resolver = (responseMsg: any) => {
@@ -237,15 +245,21 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
   }
   else if (message.type === 'SIGN_ALL_TRANSACTIONS') {
     const requestId = `req_${Date.now()}_${Math.random()}`;
-    chrome.runtime.sendMessage({
-      type: 'SHOW_SIGN_ALL_TRANSACTIONS',
-      requestId,
-      transactions: message.transactions,
-    });
+    (async () => {
+      try {
+        await chrome.action.openPopup();
+      } catch (err) {
+        console.error('Failed to open popup for transaction signing:', err);
+      }
 
-    chrome.action.openPopup().catch(err => {
-      console.error('Failed to open popup for transaction signing:', err);
-    });
+      setTimeout(() => {
+        chrome.runtime.sendMessage({
+          type: 'SHOW_SIGN_ALL_TRANSACTIONS',
+          requestId,
+          transactions: message.transactions,
+        });
+      }, 300);
+    })();
 
     const resolver = (responseMsg: any) => {
       if (
