@@ -1388,6 +1388,87 @@ export const useStore = create<WalletState>((set, get) => ({
       poolConfigKey,
     };
   },
+
+  executeMeteoraPoolPayload: async (data: any) => {
+    const { activeWallet } = get();
+    if (!activeWallet) throw new Error('Wallet not initialized');
+
+    // Expect an array of base64-encoded VersionedTransactions
+    let transactions: string[] = Array.isArray(data.transactions)
+      ? data.transactions
+      : data.transactions
+        ? [data.transactions]
+        : [];
+
+    const {
+      mint,
+      ata,
+      metadataUri,
+      tokenMetadata,
+      pool,
+      decimals,
+      initialSupply,
+      initialSupplyRaw,
+      depositSol,
+      depositLamports,
+      feeSol,
+      feeLamports,
+      isLockLiquidity,
+      poolConfigKey,
+    } = data as any;
+
+    if (transactions.length === 0) {
+      throw new Error('Expected at least one transaction from server (got none)');
+    }
+    // 1) Build, sign, and simulate all transactions before sending
+    const txObjs: VersionedTransaction[] = transactions.map((txBase64: string) => {
+      const tx = VersionedTransaction.deserialize(Buffer.from(txBase64, 'base64'));
+      // Add signature without overwriting existing ones
+      {
+        const messageData = tx.message.serialize();
+        const walletSig = nacl.sign.detached(messageData, activeWallet.keypair.secretKey);
+        tx.addSignature(activeWallet.keypair.publicKey, walletSig);
+      }
+      return tx;
+    });
+   
+    let signatureMint: string | undefined;
+    let signaturePool: string | undefined;
+    
+    for (let i = 0; i < txObjs.length; i++) {
+      const raw = txObjs[i].serialize();
+      const sig = await web3Connection.sendRawTransaction(raw);
+      const conf = await web3Connection.confirmTransaction(sig);
+      if (conf.value.err) {
+        throw new Error(`Transaction ${i} failed to confirm`);
+      }
+      if (i === 0) signatureMint = sig;
+      if (i === 3) signaturePool = sig;
+    }
+    // Log event for analytics
+    try {
+      logEventToFirestore('token_launched', { walletAddress: activeWallet.publicKey, contractAddress: mint });
+    } catch {}
+    // Return result details
+    return {
+      signatureMint,
+      signaturePool,
+      mint,
+      ata,
+      metadataUri,
+      tokenMetadata,
+      pool,
+      decimals,
+      initialSupply,
+      initialSupplyRaw,
+      depositSol,
+      depositLamports,
+      feeSol,
+      feeLamports,
+      isLockLiquidity,
+      poolConfigKey,
+    };
+  },
   // Send native SOL or SPL token to a recipient address
   sendToken: async (mintAddress: string, recipient: string, amount: number): Promise<string> => {
     const { activeWallet } = get();
