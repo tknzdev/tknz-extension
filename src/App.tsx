@@ -691,9 +691,15 @@ function App({ isSidebar = false }: AppProps = {}) {
                       : 'Transaction confirmed'}
                   </div>
                   <div className="flex items-center space-x-2">
-                    <code className="text-xs break-all mr-2 font-mono tracking-tight">
-                      {notification.message.split(': ')[1]}
-                    </code>
+                    {(() => {
+                      const sig = notification.message.split(': ')[1] || '';
+                      const shortened = sig.length > 16 ? `${sig.slice(0, 8)}…${sig.slice(-8)}` : sig;
+                      return (
+                        <code className="text-xs mr-2 font-mono tracking-tight">
+                          {shortened}
+                        </code>
+                      );
+                    })()}
                     <a
                       href={`https://solscan.io/tx/${notification.message.split(': ')[1]}?cluster=mainnet-beta`}
                       target="_blank"
@@ -729,7 +735,7 @@ function App({ isSidebar = false }: AppProps = {}) {
             <div className="text-sm break-all">
               <div className="text-xs opacity-80 mb-1">Transaction pending</div>
               <div className="flex items-center space-x-2">
-                <code className="text-xs break-all mr-2 font-mono tracking-tight">{sig}</code>
+                <code className="text-xs break-all mr-2 font-mono tracking-tight">{sig.slice(0, 8)}...{sig.slice(-8)}</code>
                 <a
                   href={`https://solscan.io/tx/${sig}?cluster=mainnet-beta`}
                   target="_blank"
