@@ -93,5 +93,74 @@ export const createConnection = () => {
     }
   };
 
-  return { getBalance, getTokenBalance };
+  /**
+   * Fetch *all* SPL token accounts for the wallet in one RPC call (JSON parsed).
+   * Mirrors the @solana/web3.js `getParsedTokenAccountsByOwner` helper that is
+   * used throughout the codebase. Only the subset of behaviour required by the
+   * extension is implemented – enough for store.ts where we iterate over the
+   * returned `value` array.
+   */
+  const getParsedTokenAccountsByOwner = async (
+    ownerAddress: string | { toString(): string },
+    filter: { mint?: string; programId?: string | { toString(): string } },
+    commitmentOrConfig: string | Record<string, unknown> = 'confirmed',
+  ): Promise<{ value: any[] }> => {
+    // Build RPC params – they follow the same order as the web3.js helper:
+    // 1. owner public key, 2. filter, 3. config object
+    const owner = typeof ownerAddress === 'string' ? ownerAddress : ownerAddress.toString();
+
+    const commitment =
+      typeof commitmentOrConfig === 'string'
+        ? { commitment: commitmentOrConfig }
+        : commitmentOrConfig || {};
+
+    const config = { encoding: 'jsonParsed', ...commitment };
+
+    // Serialize filter object: support `programId` (PublicKey or string) or `mint`.
+    const rpcFilter: Record<string, string> = {};
+    if (filter?.programId) {
+      rpcFilter.programId =
+        typeof filter.programId === 'string' ? filter.programId : filter.programId.toString();
+    }
+    if (filter?.mint) {
+      rpcFilter.mint = filter.mint;
+    }
+
+    const body = {
+      jsonrpc: '2.0',
+      id: 'bolt',
+      method: 'getTokenAccountsByOwner',
+      params: [owner, rpcFilter, config],
+    };
+
+    try {
+      const response = await fetch(RPC_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error.message || 'RPC error');
+      }
+
+      // The structure already matches what store.ts consumes (array under
+      // `value` each with `{ account: { data: { parsed: ... }}}`). We simply
+      // forward it.
+      return { value: data.result?.value || [] };
+    } catch (error) {
+      if (!(import.meta as any).vitest) {
+        console.error('Failed to fetch parsed token accounts:', error);
+      }
+      return { value: [] };
+    }
+  };
+
+  return { getBalance, getTokenBalance, getParsedTokenAccountsByOwner };
 };
