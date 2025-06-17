@@ -18,6 +18,7 @@ import { SwapPage } from './components/SwapPage';
 import { WalletOverview } from './components/WalletOverview';
 import SendTokenModal from './components/SendTokenModal';
 import { SettingsPage } from './components/SettingsPage';
+import { SignTxModal } from './components/SignTxModal';
 import { ExternalLink } from 'lucide-react';
 import { web3Connection } from './utils/connection';
 
@@ -137,6 +138,25 @@ function App({ isSidebar = false }: AppProps = {}) {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   // Pending transactions signatures
   const [pendingTxs, setPendingTxs] = useState<string[]>([]);
+
+  // Pending sign request identifier (matches background requestId)
+  const [signRequestId, setSignRequestId] = useState<string | null>(null);
+
+  // Listen for sign-transaction requests coming from the background script.
+  useEffect(() => {
+    const handler = (msg: any) => {
+      if (msg?.type === 'SHOW_SIGN_TRANSACTION') {
+        setPendingTxs([msg.transaction]);
+        setSignRequestId(msg.requestId || null);
+      }
+      if (msg?.type === 'SHOW_SIGN_ALL_TRANSACTIONS') {
+        setPendingTxs(Array.isArray(msg.transactions) ? msg.transactions : []);
+        setSignRequestId(msg.requestId || null);
+      }
+    };
+    chrome.runtime.onMessage.addListener(handler);
+    return () => chrome.runtime.onMessage.removeListener(handler);
+  }, []);
   // Auto-dismiss notifications after 5s
   useEffect(() => {
     if (notification) {
@@ -635,7 +655,20 @@ function App({ isSidebar = false }: AppProps = {}) {
   const [creationSuccessState, setCreationSuccessState] = useState<'glitch' | 'fade' | null>(null);
 
   return (
-    <div className={`${isSidebar ? 'w-full h-full ' : 'w-[400px] h-[650px] '}bg-cyber-black bg-binary-pattern binary-overlay ${
+    <>
+      {/* Transaction signing modal */}
+      {signRequestId && pendingTxs.length > 0 && (
+        <SignTxModal
+          requestId={signRequestId}
+          transactions={pendingTxs}
+          onClose={() => {
+            setPendingTxs([]);
+            setSignRequestId(null);
+          }}
+        />
+      )}
+
+      <div className={`${isSidebar ? 'w-full h-full ' : 'w-[400px] h-[650px] '}bg-cyber-black bg-binary-pattern binary-overlay ${
       creationSuccessState === 'glitch' ? 'success-glitch' : ''
     } ${creationSuccessState === 'fade' ? 'view-transition' : ''}`}>
       {/* In-app notification */}
@@ -905,7 +938,8 @@ function App({ isSidebar = false }: AppProps = {}) {
           />
         </>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 
