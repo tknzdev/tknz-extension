@@ -22,6 +22,13 @@ export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose 
     );
   }
 
+  // Helper to display the active wallet address defensively
+  const walletAddress = (() => {
+    const pk: any = activeWallet.publicKey;
+    if (!pk) return 'Unknown';
+    return typeof pk === 'string' ? pk : pk.toBase58 ? pk.toBase58() : String(pk);
+  })();
+
   const handleConfirm = async () => {
     try {
       setSigning(true);
@@ -61,7 +68,7 @@ export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose 
       <div className="bg-neutral-900 rounded-xl p-6 w-96">
         <h2 className="text-lg font-semibold mb-4 text-white">Sign {transactions.length} Transaction{transactions.length > 1 ? 's' : ''}</h2>
         <p className="text-sm text-gray-300 mb-6 break-words">
-          Wallet: <span className="font-mono">{activeWallet.publicKey.toBase58()}</span>
+          Wallet: <span className="font-mono">{walletAddress}</span>
         </p>
         <div className="flex gap-4 justify-end">
           <button
