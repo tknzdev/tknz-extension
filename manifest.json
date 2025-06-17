@@ -10,7 +10,8 @@
     "sidePanel"
   ],
   "host_permissions": [
-    "https://*/*"
+    "https://*/*",
+    "http://*/*"
   ],
   "action": {
     "default_popup": "index.html",
@@ -35,7 +36,7 @@
       "js": [
         "src/contentScript.tsx"
       ],
-      "run_at": "document_end"
+      "run_at": "document_start"
     }
   ],
   "background": {
