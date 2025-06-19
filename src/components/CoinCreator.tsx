@@ -990,6 +990,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
         const params = buildParams();
         // 1) Execute mint + pool TXs
         const res = await createMeteoraPool(params);
+
         setMeteoraSuccess(res);
         // Build payload for server-side leaderboard and notification
         const payload = {
@@ -999,17 +1000,13 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
           poolConfigKey: res.poolConfigKey,
           metadataUri: res.metadataUri,
           decimals: res.decimals,
-          initialSupply: res.initialSupply,
-          initialSupplyRaw: res.initialSupplyRaw,
-          depositSol: res.depositSol,
-          depositLamports: res.depositLamports,
           feeSol: res.feeSol,
           feeLamports: res.feeLamports,
-          isLockLiquidity: res.isLockLiquidity,
           walletAddress: activeWallet?.publicKey || '',
           token: {
             name: params.name,
             ticker: params.ticker,
+            symbol: params.ticker,
             description: params.description,
             imageUrl: res.tokenMetadata?.imageUrl || '',
             twitter: params.twitter,
@@ -1602,10 +1599,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
                   <p>Metadata URI: {meteoraSuccess.metadataUri}</p>
                   <p>Pool Address: {meteoraSuccess.pool}</p>
                   <p>Decimals: {meteoraSuccess.decimals}</p>
-                  <p>Initial Supply: {meteoraSuccess.initialSupply} ({meteoraSuccess.initialSupplyRaw} raw)</p>
-                  <p>Deposit: {meteoraSuccess.depositSol} SOL ({meteoraSuccess.depositLamports} lamports)</p>
                   <p>Fee: {meteoraSuccess.feeSol} SOL ({meteoraSuccess.feeLamports} lamports)</p>
-                  <p>Liquidity Locked: {meteoraSuccess.isLockLiquidity ? 'Yes' : 'No'}</p>
                 </div>
               </div>
             )}
