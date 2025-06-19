@@ -674,7 +674,7 @@ function App({ isSidebar = false }: AppProps = {}) {
       {/* In-app notification */}
       {notification && (
         <div
-          className={`fixed bottom-4 inset-x-4 z-50 px-4 py-3 rounded font-terminal shadow-neon-green backdrop-blur-sm border transition-all ${
+          className={`fixed ${signRequestId ? 'bottom-20' : 'bottom-4'} inset-x-4 z-40 px-4 py-3 rounded font-terminal shadow-neon-green backdrop-blur-sm border transition-all ${
             notification.type === 'success'
               ? 'bg-cyber-green/20 text-cyber-green border-cyber-green/40'
               : 'bg-cyber-orange/20 text-cyber-orange border-cyber-orange/40'
@@ -725,38 +725,44 @@ function App({ isSidebar = false }: AppProps = {}) {
           </div>
         </div>
       )}
-      {/* Pending transaction notifications */}
-      {pendingTxs.map((sig) => (
-        <div
-          key={sig}
-          className="fixed bottom-4 inset-x-4 z-50 px-4 py-3 rounded font-terminal shadow-neon-green backdrop-blur-sm border transition-all bg-cyber-green/20 text-cyber-green border-cyber-green/40"
-        >
-          <div className="flex items-center justify-between">
-            <div className="text-sm break-all">
-              <div className="text-xs opacity-80 mb-1">Transaction pending</div>
-              <div className="flex items-center space-x-2">
-                <code className="text-xs break-all mr-2 font-mono tracking-tight">{sig.slice(0, 8)}...{sig.slice(-8)}</code>
-                <a
-                  href={`https://solscan.io/tx/${sig}?cluster=mainnet-beta`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs px-2 py-0.5 bg-cyber-green/30 hover:bg-cyber-green/50 rounded transition-colors flex items-center"
-                  onClick={(e) => e.stopPropagation()}
-                  title="View on Solscan"
-                >
-                  <ExternalLink size={14} className="text-cyber-green" />
-                </a>
+      {/* Pending transaction notifications - stack them vertically */}
+      <div className={`fixed inset-x-4 z-40 transition-all ${signRequestId ? 'bottom-36' : 'bottom-4'} space-y-2`}>
+        {pendingTxs.filter(sig => sig !== signRequestId).map((sig, index) => (
+          <div
+            key={sig}
+            className="px-4 py-3 rounded font-terminal shadow-neon-green backdrop-blur-sm border transition-all bg-cyber-green/20 text-cyber-green border-cyber-green/40"
+            style={{
+              transform: `translateY(${index * -5}px)`,
+              opacity: 1 - (index * 0.1)
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-sm break-all">
+                <div className="text-xs opacity-80 mb-1">Transaction pending</div>
+                <div className="flex items-center space-x-2">
+                  <code className="text-xs break-all mr-2 font-mono tracking-tight">{sig.slice(0, 8)}...{sig.slice(-8)}</code>
+                  <a
+                    href={`https://solscan.io/tx/${sig}?cluster=mainnet-beta`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs px-2 py-0.5 bg-cyber-green/30 hover:bg-cyber-green/50 rounded transition-colors flex items-center"
+                    onClick={(e) => e.stopPropagation()}
+                    title="View on Solscan"
+                  >
+                    <ExternalLink size={14} className="text-cyber-green" />
+                  </a>
+                </div>
               </div>
+              <button
+                className="ml-2 text-xs opacity-70 hover:opacity-100"
+                onClick={() => setPendingTxs(prev => prev.filter(s => s !== sig))}
+              >
+                ✕
+              </button>
             </div>
-            <button
-              className="ml-2 text-xs opacity-70 hover:opacity-100"
-              onClick={() => setPendingTxs(prev => prev.filter(s => s !== sig))}
-            >
-              ✕
-            </button>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
       {/* Background crypto pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-0.5 bg-cyber-green/10"></div>
