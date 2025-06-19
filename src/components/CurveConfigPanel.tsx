@@ -8,9 +8,15 @@ interface CurveConfigPanelProps {
 }
 
 const CurveConfigPanel: React.FC<CurveConfigPanelProps> = ({ isOpen, onClose }) => {
+  // Presets integration
+  const presets = useStore(state => state.presets);
+  const selectedPreset = useStore(state => state.selectedPreset);
+  const setPreset = useStore(state => state.setPreset);
+  // Custom override settings
   const { curveConfigOverrides, setCurveConfigOverrides } = useStore();
   const [localConfig, setLocalConfig] = useState<Record<string, any>>({});
-  const [activeTab, setActiveTab] = useState<'fees' | 'migration' | 'vesting' | 'advanced'>('fees');
+  // Tabs: include presets; custom tabs disabled for now
+  const [activeTab, setActiveTab] = useState<'presets' | 'fees' | 'migration' | 'vesting' | 'advanced'>('presets');
 
   useEffect(() => {
     if (isOpen) {
@@ -50,8 +56,13 @@ const CurveConfigPanel: React.FC<CurveConfigPanelProps> = ({ isOpen, onClose }) 
     return cursor ?? defaultValue;
   };
 
+  /** Handle save action: presets or custom overrides */
   const handleSave = () => {
-    setCurveConfigOverrides(localConfig);
+    if (activeTab === 'presets') {
+      // Preset already applied via selection; just close
+    } else {
+      setCurveConfigOverrides(localConfig);
+    }
     onClose();
   };
 
@@ -89,19 +100,19 @@ const CurveConfigPanel: React.FC<CurveConfigPanelProps> = ({ isOpen, onClose }) 
         {/* Tabs */}
         <div className="flex border-b border-cyber-green/30">
           {[
-            { id: 'fees', label: 'Fees', icon: Percent },
-            { id: 'migration', label: 'Migration', icon: TrendingUp },
-            { id: 'vesting', label: 'Vesting', icon: Clock },
-            { id: 'advanced', label: 'Advanced', icon: Shield }
+            { id: 'presets', label: 'Presets', icon: Coins, disabled: false },
+            { id: 'fees', label: 'Fees', icon: Percent, disabled: true },
+            { id: 'migration', label: 'Migration', icon: TrendingUp, disabled: true },
+            { id: 'vesting', label: 'Vesting', icon: Clock, disabled: true },
+            { id: 'advanced', label: 'Advanced', icon: Shield, disabled: true }
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 py-3 px-2 font-terminal text-xs uppercase flex items-center justify-center space-x-1 transition-all ${
-                activeTab === tab.id
-                  ? 'bg-cyber-green/20 text-cyber-green border-b-2 border-cyber-green'
-                  : 'text-cyber-green/60 hover:bg-cyber-green/10'
-              }`}
+              onClick={() => { if (!tab.disabled) setActiveTab(tab.id as any); }}
+              disabled={tab.disabled}
+              className={`flex-1 py-3 px-2 font-terminal text-xs uppercase flex items-center justify-center space-x-1 transition-all
+                ${activeTab === tab.id ? 'bg-cyber-green/20 text-cyber-green border-b-2 border-cyber-green' : 'text-cyber-green/60'}
+                ${!tab.disabled ? 'hover:bg-cyber-green/10' : 'opacity-50 cursor-not-allowed hover:bg-transparent'}`}
             >
               <tab.icon className="w-3 h-3" />
               <span>{tab.label}</span>
@@ -111,6 +122,42 @@ const CurveConfigPanel: React.FC<CurveConfigPanelProps> = ({ isOpen, onClose }) 
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Presets Tab */}
+          {activeTab === 'presets' && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-terminal text-cyber-purple uppercase flex items-center space-x-2">
+                <Coins className="w-4 h-4" />
+                <span>Select a Preset</span>
+              </h3>
+              <div className="space-y-2">
+                {presets.map(p => (
+                  <label
+                    key={p.pubkey}
+                    className="flex items-start p-3 border border-cyber-green/20 rounded hover:bg-cyber-green/10 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="preset"
+                      value={p.pubkey}
+                      checked={selectedPreset === p.pubkey}
+                      onChange={() => setPreset(p.pubkey)}
+                      className="mt-1 mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="font-terminal text-sm text-white">
+                        {p.label || p.pubkey}
+                      </div>
+                      {p.description && (
+                        <div className="text-xs text-cyber-green/60 font-terminal">
+                          {p.description}
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           {/* Fees Tab */}
           {activeTab === 'fees' && (
             <>
@@ -400,21 +447,23 @@ const CurveConfigPanel: React.FC<CurveConfigPanelProps> = ({ isOpen, onClose }) 
         <div className="bg-black/50 border-t border-cyber-green/30 p-4 space-y-3">
           <div className="flex space-x-2">
             <button
-              onClick={handleReset}
-              className="flex-1 bg-black border border-cyber-green/50 hover:bg-cyber-green/10 text-cyber-green px-4 py-2 font-terminal text-sm uppercase transition-all"
+              onClick={() => onClose()}
+              className="flex-1 bg-black border border-cyber-green/50 text-cyber-green px-4 py-2 font-terminal text-sm uppercase transition-all"
             >
-              Reset to Default
+              {activeTab === 'presets' ? 'Cancel' : 'Reset to Default'}
             </button>
             <button
               onClick={handleSave}
               className="flex-1 bg-cyber-green hover:bg-cyber-green/90 text-black px-4 py-2 font-terminal text-sm uppercase transition-all"
             >
-              Apply Changes
+              {activeTab === 'presets' ? 'Save' : 'Apply Changes'}
             </button>
           </div>
-          <p className="text-xs font-terminal text-cyber-green/60 text-center">
-            {Object.keys(localConfig).length} custom parameters set
-          </p>
+          {activeTab !== 'presets' && (
+            <p className="text-xs font-terminal text-cyber-green/60 text-center">
+              {Object.keys(localConfig).length} custom parameters set
+            </p>
+          )}
         </div>
       </div>
 
