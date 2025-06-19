@@ -53,6 +53,19 @@ export interface TokenCreationData {
       description: string;
     };
 }
+/**
+ * Configuration preset as fetched from the backend pool-configs API
+ */
+export interface ConfigPreset {
+  /** Public key identifier for the preset */
+  pubkey: string;
+  /** Display label for the preset */
+  label?: string;
+  /** Optional longer description of the preset */
+  description?: string;
+  /** Any additional fields supplied by the backend */
+  [key: string]: any;
+}
   
 export interface WalletState {
     wallets: WalletInfo[]; // List of all wallets
@@ -231,6 +244,14 @@ export interface WalletState {
      * Update DBC curveConfig overrides
      */
     setCurveConfigOverrides: (overrides: Record<string, any>) => void;
+    /** Config presets fetched from the backend API */
+    presets: ConfigPreset[];
+    /** Currently selected preset key (pubkey) */
+    selectedPreset: string;
+    /** Set the selected preset and persist it */
+    setPreset: (presetKey: string) => Promise<void>;
+    /** Fetch available presets from the API and initialize selection */
+    fetchPresets: () => Promise<void>;
 }
   
 export interface ArticleData {
