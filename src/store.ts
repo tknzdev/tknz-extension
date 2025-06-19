@@ -13,7 +13,7 @@ const DEV_MODE = process.env.NODE_ENV === 'development' && !chrome?.tabs;
 import { compareVersions } from 'compare-versions'
 import { TOKEN_PROGRAM_ID, createTransferInstruction, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 import { getTokenInfo, getUltraBalances, getPrices, BalanceInfo } from './services/jupiterService';
-import { WalletState, CreatedCoin, ArticleData, CoinCreationParams, TokenCreationData, WalletInfo } from './types';
+import { WalletState, CreatedCoin, ArticleData, CoinCreationParams, TokenCreationData, WalletInfo, ConfigPreset } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import nacl from 'tweetnacl';
 
@@ -26,6 +26,14 @@ const CREATE_TOKEN_METEORA_API_URL = DEV_MODE
   ? 'http://localhost:8888/.netlify/functions/create-token-meteora'
   : 'https://tknz.fun/.netlify/functions/create-token-meteora';
 
+const CREATE_POOL_API_URL = DEV_MODE
+  ? 'http://localhost:8888/.netlify/functions/create-pool'
+  : 'https://tknz.fun/.netlify/functions/create-pool';
+/** API endpoint to fetch available pool configuration presets */
+const POOL_CONFIGS_API_URL = DEV_MODE
+  ? 'http://localhost:8888/.netlify/functions/pool-configs'
+  : 'https://tknz.fun/.netlify/functions/pool-configs';
+  
 const NATIVE_MINT = 'So11111111111111111111111111111111111111112';
 const connection = createConnection();
 const REFRESH_INTERVAL = 60 * 1000;
@@ -106,6 +114,50 @@ export const useStore = create<WalletState>((set, get) => ({
    * Update DBC curveConfig overrides before token creation
    */
   setCurveConfigOverrides: (overrides: Record<string, any>) => set({ curveConfigOverrides: overrides }),
+  /** Configuration presets loaded from the backend */
+  presets: [] as ConfigPreset[],
+  /** Selected preset public key */
+  selectedPreset: '',
+  /** Set the selected preset and persist it */
+  setPreset: async (presetKey: string) => {
+    set({ selectedPreset: presetKey });
+    try {
+      await storage.set({ selectedPreset: presetKey });
+    } catch (err) {
+      console.error('Failed to persist selected preset:', err);
+    }
+  },
+  /** Fetch available presets from API and initialize selection */
+  fetchPresets: async () => {
+    try {
+      const res = await fetch(POOL_CONFIGS_API_URL);
+      if (!res.ok) throw new Error(`Failed to fetch presets: ${res.status} ${res.statusText}`);
+      const json = await res.json();
+      const configs: any[] = Array.isArray(json.configs) ? json.configs : [];
+      set({ presets: configs });
+      // Determine initial selected preset
+      let presetKey: string | undefined;
+      try {
+        const stored = await storage.get('selectedPreset');
+        presetKey = stored.selectedPreset;
+      } catch {}
+      const hasStored = configs.some(c => c.pubkey === presetKey);
+      if (!hasStored) {
+        // Default to 'Classic' if available, else first preset
+        const classic = configs.find(c => c.label?.toLowerCase() === 'classic');
+        presetKey = classic?.pubkey || configs[0]?.pubkey || '';
+      }
+      set({ selectedPreset: presetKey });
+      // Persist default selection
+      try {
+        await storage.set({ selectedPreset: presetKey });
+      } catch (err) {
+        console.error('Failed to persist default preset:', err);
+      }
+    } catch (err: any) {
+      console.error('Error fetching presets:', err);
+    }
+  },
   // Initial parameters for SDK token creation, used to pre-populate form fields
   initialTokenCreateParams: null,
   // Set initial token creation parameters
@@ -1256,102 +1308,51 @@ export const useStore = create<WalletState>((set, get) => ({
    * Create a new token and liquidity pool via Meteora: call backend to build transactions,
    * sign, send both mint and pool TXs, and return details.
    */
-  createMeteoraPool: async ({ name, ticker, description, imageUrl, websiteUrl, twitter, telegram, investmentAmount }: CoinCreationParams) => {
-    const { activeWallet } = get();
+  /**
+   * Create a new token and liquidity pool via the create-pool API endpoint:
+   * fetch unsigned transaction, sign with user, send, and return on-chain details.
+   */
+  createMeteoraPool: async ({ name, ticker, description, imageUrl, websiteUrl, twitter, telegram }: CoinCreationParams) => {
+    const { activeWallet, selectedPreset } = get();
     if (!activeWallet) throw new Error('Wallet not initialized');
-    // Prepare payload for Meteora token+pool creation
-    const { curveConfigOverrides } = get();
-    // Build portal params for the backend API – we deposit `investmentAmount` SOL into the
-    // quote side of the bonding-curve *and* immediately spend an equal amount to buy the
-    // token so the UX mirrors pump.fun defaults. This produces the familiar "half deposit,
-    // half buy" experience users expect when launching via pump.fun.
-    const portalParams: Record<string, any> = {
-      amount: investmentAmount,      // SOL seeded into the pool
-      buyAmount: investmentAmount,   // SOL used for the first buy swap
-      priorityFee: 0,
-    };
-
-    // If the user provided custom DBC curve configuration via the UI we forward it in
-    // the request so the backend can merge it with the pump.fun-like defaults.
-    if (curveConfigOverrides && Object.keys(curveConfigOverrides).length > 0) {
-      portalParams.curveConfig = curveConfigOverrides;
-    }
+    // Build payload for create-pool API
     const payload = {
       walletAddress: activeWallet.publicKey.toString(),
-      token: { name, ticker, description, imageUrl, websiteUrl, twitter, telegram },
-      isLockLiquidity: false,
-      portalParams
+      configKey: selectedPreset,
+      token: { name, ticker, description, imageUrl, websiteUrl, twitter, telegram }
     };
-    // Request unsigned transactions from backend
-    const response = await fetch(CREATE_TOKEN_METEORA_API_URL, {
+    // Request unsigned transaction(s) from backend
+    const response = await fetch(CREATE_POOL_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
     if (!response.ok) {
-      throw new Error(`Meteora token creation failed: ${response.status} ${response.statusText}`);
+      const err = await response.text().catch(() => response.statusText);
+      throw new Error(`Create-pool failed: ${response.status} ${err}`);
     }
-    const data = await response.json();
+    const data: any = await response.json();
     if (data.error) {
-      throw new Error(`Meteora token creation error: ${data.error}`);
+      throw new Error(`Create-pool error: ${data.error}`);
     }
     // Expect an array of base64-encoded VersionedTransactions
-    let transactions: string[] = Array.isArray(data.transactions)
+    const txB64: string[] = Array.isArray(data.transactions)
       ? data.transactions
       : data.transactions
         ? [data.transactions]
         : [];
-    const {
-      mint,
-      ata,
-      metadataUri,
-      tokenMetadata,
-      pool,
-      decimals,
-      initialSupply,
-      initialSupplyRaw,
-      depositSol,
-      depositLamports,
-      feeSol,
-      feeLamports,
-      isLockLiquidity,
-      poolConfigKey,
-    } = data as any;
-    if (transactions.length === 0) {
-      throw new Error('Expected at least one transaction from server (got none)');
+    if (txB64.length === 0) {
+      throw new Error('No transactions returned from create-pool');
     }
-    // 1) Build, sign, and simulate all transactions before sending
-    const txObjs: VersionedTransaction[] = transactions.map((txBase64: string, idx: number) => {
-      const tx = VersionedTransaction.deserialize(Buffer.from(txBase64, 'base64'));
-      // Add signature without overwriting existing ones
-      {
-        const messageData = tx.message.serialize();
-        const walletSig = nacl.sign.detached(messageData, activeWallet.keypair.secretKey);
-        tx.addSignature(activeWallet.keypair.publicKey, walletSig);
-      }
+    // Deserialize and sign each transaction with user's keypair
+    const txObjs: VersionedTransaction[] = txB64.map(b64 => {
+      const tx = VersionedTransaction.deserialize(Buffer.from(b64, 'base64'));
+      const msgBytes = tx.message.serialize();
+      const walletSig = nacl.sign.detached(msgBytes, activeWallet.keypair.secretKey);
+      tx.addSignature(activeWallet.keypair.publicKey, walletSig);
       return tx;
     });
-    // Simulate all transactions
-    //for (let i = 0; i < txObjs.length; i++) {
-    //  const tx = txObjs[i];
-    //  const sim = await web3Connection.simulateTransaction(tx);
-    //  if (sim.value.err) {
-    //    console.error(sim.value.err);
-    //    console.log(sim)
-    //    // Gather instruction details (guard against undefined instructions)
-    //    const msg = tx.message;
-    //    const instrDetails = Array.isArray(msg.instructions)
-    //      ? msg.instructions.map((ix, idx) => {
-    //          const pid = msg.staticAccountKeys?.[ix.programIdIndex]?.toBase58() ?? '';
-    //          return `${idx}: ${pid} len:${ix.data?.length ?? 0}`;
-    //        }).join('; ')
-    //      : '';
-    //    throw new Error(
-    //      `Simulation failed for tx ${i}: ${JSON.stringify(sim.value.err)}; instructions: ${instrDetails}`
-    //    );
-    //  }
-    //}
-    // 2) Submit all transactions sequentially
+    // Submit all transactions sequentially
     let signatureMint: string | undefined;
     let signaturePool: string | undefined;
     for (let i = 0; i < txObjs.length; i++) {
@@ -1361,31 +1362,25 @@ export const useStore = create<WalletState>((set, get) => ({
       if (conf.value.err) {
         throw new Error(`Transaction ${i} failed to confirm`);
       }
+      // Record first signature as primary
       if (i === 0) signatureMint = sig;
-      if (i === 3) signaturePool = sig;
+      // For multi-tx flows, record the pool tx signature (if present)
+      if (i === txObjs.length - 1) signaturePool = sig;
     }
     // Log event for analytics
-    try {
-      logEventToFirestore('token_launched', { walletAddress: activeWallet.publicKey, contractAddress: mint });
-    } catch {}
-    // Return result details
+    try { logEventToFirestore('token_launched', { walletAddress: activeWallet.publicKey, contractAddress: data.mint }); } catch {}
+    // Return relevant details
     return {
       signatureMint,
       signaturePool,
-      mint,
-      ata,
-      metadataUri,
-      tokenMetadata,
-      pool,
-      decimals,
-      initialSupply,
-      initialSupplyRaw,
-      depositSol,
-      depositLamports,
-      feeSol,
-      feeLamports,
-      isLockLiquidity,
-      poolConfigKey,
+      mint: data.mint,
+      ata: data.ata,
+      metadataUri: data.metadataUri,
+      pool: data.pool,
+      poolConfigKey: data.poolConfigKey,
+      feeSol: data.feeSol,
+      feeLamports: data.feeLamports,
+      tokenMetadata: data.tokenMetadata
     };
   },
 
