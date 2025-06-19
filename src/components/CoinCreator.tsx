@@ -419,6 +419,15 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
   const activeWallet = useStore(state => state.activeWallet);
   
   const refreshPortfolioData = useStore(state => state.refreshPortfolioData);
+  // Presets from backend: list, selected key, and actions
+  const presets = useStore(state => state.presets);
+  const selectedPreset = useStore(state => state.selectedPreset);
+  const setPreset = useStore(state => state.setPreset);
+  const fetchPresets = useStore(state => state.fetchPresets);
+  // Load presets on mount
+  useEffect(() => {
+    fetchPresets();
+  }, [fetchPresets]);
 
   // Form state - initialize immediately
   const [articleData, setArticleData] = useState<ArticleData>({
@@ -988,7 +997,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
         // Handle Meteora integration: build, sign, and send via store
       if (integrationMode === 'meteora') {
         const params = buildParams();
-        // 1) Execute mint + pool TXs
+        // 1) Execute mint + pool via create-pool API
         const res = await createMeteoraPool(params);
 
         setMeteoraSuccess(res);
@@ -999,7 +1008,6 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
           pool: res.pool,
           poolConfigKey: res.poolConfigKey,
           metadataUri: res.metadataUri,
-          decimals: res.decimals,
           feeSol: res.feeSol,
           feeLamports: res.feeLamports,
           walletAddress: activeWallet?.publicKey || '',
@@ -1012,17 +1020,14 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
             twitter: params.twitter,
             telegram: params.telegram,
             websiteUrl: params.websiteUrl
-          },
-          portalParams: { amount: params.investmentAmount, buyAmount: params.investmentAmount, priorityFee: 0 }
+          }
         };
         // 2) Confirm to v2 leaderboard
         const { createdAt } = await fetch(CONFIRM_API_URL, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
-        }).then(res => res.json())
-        .catch(err => console.error('confirm-token-creation failed', err));
+        }).then(r => r.json()).catch(err => console.error('confirm-token-creation failed', err));
 
-        console.log('createdAt', createdAt);
         // 3) Notify via Telegram
         fetch(NOTIFY_API_URL, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
