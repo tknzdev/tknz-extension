@@ -719,7 +719,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
     });
   }
 
-  const PUMP_FEE = 0.03;
+  const PUMP_FEE = 0.01;
   const requiredBalance = useMemo(() => investmentAmount + PUMP_FEE, [investmentAmount]);
 
   // Progress animation effect for the terminal loading
