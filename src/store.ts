@@ -1312,14 +1312,16 @@ export const useStore = create<WalletState>((set, get) => ({
    * Create a new token and liquidity pool via the create-pool API endpoint:
    * fetch unsigned transaction, sign with user, send, and return on-chain details.
    */
-  createMeteoraPool: async ({ name, ticker, description, imageUrl, websiteUrl, twitter, telegram }: CoinCreationParams) => {
+  createMeteoraPool: async ({ name, ticker, description, imageUrl, websiteUrl, twitter, telegram, investmentAmount }: CoinCreationParams) => {
     const { activeWallet, selectedPreset } = get();
     if (!activeWallet) throw new Error('Wallet not initialized');
-    // Build payload for create-pool API
-    const payload = {
+    // Extract buyAmount from provided params (optional initial buy)
+    const buyAmount = investmentAmount || 0;
+    const payload: any = {
       walletAddress: activeWallet.publicKey.toString(),
       configKey: selectedPreset,
-      token: { name, ticker, description, imageUrl, websiteUrl, twitter, telegram }
+      token: { name, ticker, description, imageUrl, websiteUrl, twitter, telegram },
+      buyAmount
     };
     // Request unsigned transaction(s) from backend
     const response = await fetch(CREATE_POOL_API_URL, {
