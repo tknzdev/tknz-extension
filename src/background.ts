@@ -176,20 +176,25 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
     return true;
   }
   else if (message.type === 'CONNECT') {
+    // Fetch active wallet publicKey for response
+    chrome.storage.local.get(['wallets', 'activeWalletId'], (data) => {
+      const wallets: any[] = Array.isArray(data.wallets) ? data.wallets : [];
+      const active = wallets.find(w => w.id === data.activeWalletId);
+      sendResponse({ success: true, publicKey: active?.publicKey });
+    });
+    // Open the extension popup to show connect UI, then auto-close it
     (async () => {
       try {
-        // Open extension popup for connect UI
         await chrome.action.openPopup();
       } catch (e) {
         console.error('Failed to open popup for connect:', e);
       }
-      chrome.storage.local.get(['wallets', 'activeWalletId'], (data) => {
-        const wallets: any[] = Array.isArray(data.wallets) ? data.wallets : [];
-        const activeId: string = data.activeWalletId;
-        const active = wallets.find(w => w.id === activeId);
-        sendResponse({ success: true, publicKey: active?.publicKey });
-      });
+      // After a short delay, instruct the UI to close itself
+      setTimeout(() => {
+        chrome.runtime.sendMessage({ type: 'CLOSE_CONNECT_POPUP' });
+      }, 800);
     })();
+    // Keep the message channel open for sendResponse
     return true;
   }
   else if (message.type === 'SIGN_TRANSACTION') {
