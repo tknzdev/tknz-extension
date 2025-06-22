@@ -549,11 +549,10 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
   // Check if form has minimum required fields
   useEffect(() => {
     const hasRequiredFields = Boolean(
-      coinName.trim() && 
-      ticker.trim() && 
-      description.trim() && 
-      (imageUrl.trim() || imageFile) &&
-      investmentAmount > 0
+      coinName.trim() &&
+      ticker.trim() &&
+      description.trim() &&
+      (imageUrl.trim() || imageFile)
     );
     setFormReady(hasRequiredFields);
   }, [coinName, ticker, description, imageUrl, imageFile, investmentAmount]);
@@ -1478,9 +1477,9 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
 
             <div className="crypto-card p-4 space-y-2">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2">
                   <DollarSign className="w-4 h-4 text-cyber-green" />
-                  <span className="text-sm font-terminal text-cyber-pink">Investment Amount</span>
+                  <span className="text-sm font-terminal text-cyber-pink">Initial Buy (Tokens) <span className="text-xs text-cyber-purple">optional</span></span>
                 </div>
                 <span className="text-xs font-terminal text-cyber-purple">Fee: 0.01 SOL</span>
               </div>
@@ -1497,11 +1496,11 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
                       className={`input-field w-full font-terminal pr-16 text-lg ${investmentAmount > 85 ? 'border-cyber-pink' : ''}`}
                       placeholder="0.00"
                     />
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-2 pointer-events-none">
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-2 pointer-events-none">
                       {investmentAmount > 85 && (
                         <AlertCircle className="w-5 h-5 text-cyber-pink" />
                       )}
-                      <span className="text-cyber-green font-terminal font-bold text-lg">SOL</span>
+                      <span className="text-cyber-green font-terminal font-bold text-lg">{ticker?.toUpperCase()}</span>
                     </div>
                   </div>
                   {investmentAmount > 0 && solPriceUsd > 0 && (
