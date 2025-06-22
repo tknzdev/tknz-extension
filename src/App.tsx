@@ -28,6 +28,23 @@ function App({ isSidebar = false }: AppProps = {}) {
   useEffect(() => {
     loadVerifiedTokens().catch(err => console.error('Token DB init error:', err));
   }, []);
+
+  // Auto-close extension popup after a programmatic connect
+  useEffect(() => {
+    const handleClose = (msg: any) => {
+      if (msg?.type === 'CLOSE_CONNECT_POPUP' && !isSidebar) {
+        window.close();
+      }
+    };
+    if (chrome?.runtime && chrome.runtime.onMessage) {
+      chrome.runtime.onMessage.addListener(handleClose);
+    }
+    return () => {
+      if (chrome?.runtime && chrome.runtime.onMessage) {
+        chrome.runtime.onMessage.removeListener(handleClose);
+      }
+    };
+  }, [isSidebar]);
   // Notify background that side panel is open for this tab
   useEffect(() => {
     if (isSidebar && chrome?.tabs) {
