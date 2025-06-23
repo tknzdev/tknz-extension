@@ -220,6 +220,7 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
           type: 'SHOW_SIGN_TRANSACTION',
           requestId,
           transaction: message.transaction,
+          origin: sender.origin || sender.url,
         });
       }, 300); // give popup time to load script
     })();
@@ -262,6 +263,7 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
           type: 'SHOW_SIGN_ALL_TRANSACTIONS',
           requestId,
           transactions: message.transactions,
+          origin: sender.origin || sender.url,
         });
       }, 300);
     })();
