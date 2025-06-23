@@ -14,7 +14,8 @@ export interface CreatedCoin {
     address: string;
     name: string;
     ticker: string;
-    pumpUrl: string;
+    pumpUrl?: string;
+    launchpadUrl?: string;
     balance: number; // Quantity of the token
     usdPrice?: number; // USD price per token
     usdValue?: number; // Total USD value of this coin holding (balance * usdPrice)
