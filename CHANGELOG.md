@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.23.0](https://github.com/tknzdev/tknz-monorepo/compare/v0.22.0...v0.23.0) (2025-06-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* **components:** The layout and styles of the SignTxModal component have been updated for improved responsiveness and visual consistency. Make sure to review and update any custom styling that may conflict with these changes.
+
+### Features
+
+* **components:** Update CoinCreator UI with configuration button and create coin text ([1c3dfde](https://github.com/tknzdev/tknz-monorepo/commit/1c3dfdec4ac9c91bd4d4f7610dfe175ba4e946cd))
+* **components:** Update default exchange to 'launch.tknz.fun' and rename 'Default Exchange' to 'Default Launchpad' ([8407e5d](https://github.com/tknzdev/tknz-monorepo/commit/8407e5d5feee37a6f375802f9f0e87e81c538f48))
+* **components:** Update SignTxModal layout and styles ([5d69261](https://github.com/tknzdev/tknz-monorepo/commit/5d69261351ebf3db5e7458a2830d535917fa339c))
+* **store:** update endpoint for creating token pool ([890c96b](https://github.com/tknzdev/tknz-monorepo/commit/890c96b4ed13d7f96befb0fddda423ba944efbe7))
+* **styles:** Add custom scrollbar styles for transaction details ([f0378aa](https://github.com/tknzdev/tknz-monorepo/commit/f0378aa5bee70f4a0246fceca8880e9233a00639))
+* **types:** add optional 'pumpUrl' and 'launchpadUrl' fields to CreatedCoin interface ([7ce67c0](https://github.com/tknzdev/tknz-monorepo/commit/7ce67c02af5488f23c6fea32b8cf572e2482b631))
+
 ## 0.22.0 (2025-06-23)
 
 
