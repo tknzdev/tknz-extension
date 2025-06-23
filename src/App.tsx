@@ -158,6 +158,7 @@ function App({ isSidebar = false }: AppProps = {}) {
 
   // Pending sign request identifier (matches background requestId)
   const [signRequestId, setSignRequestId] = useState<string | null>(null);
+  const [signRequestOrigin, setSignRequestOrigin] = useState<string | null>(null);
 
   // Listen for sign-transaction requests coming from the background script.
   useEffect(() => {
@@ -165,10 +166,12 @@ function App({ isSidebar = false }: AppProps = {}) {
       if (msg?.type === 'SHOW_SIGN_TRANSACTION') {
         setPendingTxs([msg.transaction]);
         setSignRequestId(msg.requestId || null);
+        setSignRequestOrigin(msg.origin || null);
       }
       if (msg?.type === 'SHOW_SIGN_ALL_TRANSACTIONS') {
         setPendingTxs(Array.isArray(msg.transactions) ? msg.transactions : []);
         setSignRequestId(msg.requestId || null);
+        setSignRequestOrigin(msg.origin || null);
       }
     };
     chrome.runtime.onMessage.addListener(handler);
@@ -678,9 +681,11 @@ function App({ isSidebar = false }: AppProps = {}) {
         <SignTxModal
           requestId={signRequestId}
           transactions={pendingTxs}
+          origin={signRequestOrigin}
           onClose={() => {
             setPendingTxs([]);
             setSignRequestId(null);
+            setSignRequestOrigin(null);
           }}
         />
       )}
