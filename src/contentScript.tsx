@@ -683,6 +683,8 @@ window.addEventListener('message', async (event) => {
     chrome.runtime.sendMessage({ type: 'CONNECT' }, (response) => {
       if (chrome.runtime.lastError) {
         console.error('CONNECT messaging error:', chrome.runtime.lastError.message);
+        const data = { source: 'tknz', type: 'CONNECT_RESPONSE', success: false };
+        window.postMessage(data, '*');
         return;
       }
       const data = {
