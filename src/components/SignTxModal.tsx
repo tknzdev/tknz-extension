@@ -126,9 +126,9 @@ export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose 
 
   return (
     <div className="fixed inset-0 bg-cyber-black/90 backdrop-blur-lg flex items-center justify-center z-[60] animate-fade-in">
-      <div className="bg-gradient-to-b from-cyber-dark to-cyber-black border border-cyber-green/30 rounded-xl w-[480px] animate-fade-scale-in shadow-[0_0_30px_rgba(0,255,170,0.2)]">
+      <div className="bg-gradient-to-b from-cyber-dark to-cyber-black border border-cyber-green/30 rounded-xl w-[480px] max-h-[90vh] flex flex-col animate-fade-scale-in shadow-[0_0_30px_rgba(0,255,170,0.2)]">
         {/* Header with glowing effect */}
-        <div className="relative border-b border-cyber-green/20 p-6 pb-4">
+        <div className="relative border-b border-cyber-green/20 p-6 pb-4 flex-shrink-0">
           <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-cyber-green to-transparent"></div>
           
           <div className="flex items-center justify-between mb-4">
@@ -169,8 +169,8 @@ export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose 
         </div>
 
         {/* Wallet info */}
-        <div className="p-6 pb-4 space-y-4">
-          <div className="bg-cyber-black/60 border border-cyber-green/20 rounded-lg p-4">
+        <div className="p-6 pb-4 space-y-4 flex-1 overflow-hidden flex flex-col">
+          <div className="bg-cyber-black/60 border border-cyber-green/20 rounded-lg p-4 flex-shrink-0">
             <div className="flex items-center space-x-3">
               <div className="bg-cyber-green/10 rounded-full p-2">
                 <Key className="w-5 h-5 text-cyber-green" />
@@ -194,46 +194,48 @@ export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose 
           </div>
 
           {/* Transaction details */}
-          <div className="space-y-3">
-            <p className="text-xs font-terminal text-cyber-green/60 uppercase tracking-wide">Transaction Details</p>
-            {parsedTransactions.map((tx, idx) => (
-              <div 
-                key={idx} 
-                className={`bg-cyber-black/40 border rounded-lg p-3 transition-all duration-300 ${
-                  signing && currentStep > idx 
-                    ? 'border-cyber-green shadow-[0_0_10px_rgba(0,255,170,0.3)]' 
-                    : 'border-cyber-green/20'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-cyber-purple text-xs font-terminal">
-                    TX {idx + 1}/{transactions.length}
-                  </span>
-                  {signing && currentStep === idx + 1 && (
-                    <div className="flex items-center space-x-2">
-                      <Zap className="w-3 h-3 text-cyber-green animate-pulse" />
-                      <span className="text-xs font-terminal text-cyber-green animate-pulse">SIGNING...</span>
-                    </div>
-                  )}
-                  {signing && currentStep > idx && (
-                    <CheckCircle className="w-4 h-4 text-cyber-green" />
-                  )}
+          <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
+            <p className="text-xs font-terminal text-cyber-green/60 uppercase tracking-wide flex-shrink-0">Transaction Details</p>
+            <div className="overflow-y-auto max-h-[200px] space-y-3 pr-2 scrollbar-thin scrollbar-thumb-cyber-green/20 scrollbar-track-transparent">
+              {parsedTransactions.map((tx, idx) => (
+                <div 
+                  key={idx} 
+                  className={`bg-cyber-black/40 border rounded-lg p-3 transition-all duration-300 ${
+                    signing && currentStep > idx 
+                      ? 'border-cyber-green shadow-[0_0_10px_rgba(0,255,170,0.3)]' 
+                      : 'border-cyber-green/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-cyber-purple text-xs font-terminal">
+                      TX {idx + 1}/{transactions.length}
+                    </span>
+                    {signing && currentStep === idx + 1 && (
+                      <div className="flex items-center space-x-2">
+                        <Zap className="w-3 h-3 text-cyber-green animate-pulse" />
+                        <span className="text-xs font-terminal text-cyber-green animate-pulse">SIGNING...</span>
+                      </div>
+                    )}
+                    {signing && currentStep > idx && (
+                      <CheckCircle className="w-4 h-4 text-cyber-green" />
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {tx.instructions.map((ix: any, iIdx: number) => (
+                      <div key={iIdx} className="text-xs font-terminal">
+                        <span className="text-cyber-green/60">→</span>
+                        <span className="text-cyber-green ml-2">{ix.program}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  {tx.instructions.map((ix: any, iIdx: number) => (
-                    <div key={iIdx} className="text-xs font-terminal">
-                      <span className="text-cyber-green/60">→</span>
-                      <span className="text-cyber-green ml-2">{ix.program}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
           {/* Warning message */}
-          <div className="bg-cyber-yellow/10 border border-cyber-yellow/30 rounded-lg p-3 flex items-start space-x-2">
+          <div className="bg-cyber-yellow/10 border border-cyber-yellow/30 rounded-lg p-3 flex items-start space-x-2 flex-shrink-0">
             <AlertTriangle className="w-4 h-4 text-cyber-yellow mt-0.5 flex-shrink-0" />
             <p className="text-xs font-terminal text-cyber-yellow/90">
               Carefully review transaction details before signing. This action cannot be undone.
@@ -242,7 +244,7 @@ export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose 
         </div>
 
         {/* Action buttons */}
-        <div className="p-6 pt-0 flex gap-3">
+        <div className="p-6 pt-0 flex gap-3 flex-shrink-0">
           <button
             onClick={handleReject}
             className="flex-1 px-4 py-3 rounded-lg bg-cyber-black border border-red-500/50 text-red-400 font-terminal 
