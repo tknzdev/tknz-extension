@@ -313,10 +313,6 @@ const CostBreakdown = React.memo<{
     {previewData && !isAutoPreviewLoading ? (
       <div className="space-y-1 font-terminal text-xs text-white">
         <p className="flex justify-between">
-          <span>Pump Fee:</span> 
-          <span>{previewData.pumpFeeAmount.toFixed(4)} SOL</span>
-        </p>
-        <p className="flex justify-between">
           <span>TKNZ Fee:</span> 
           <span>{previewData.feeAmount.toFixed(4)} SOL</span>
         </p>
@@ -1518,7 +1514,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
               )}
             </div>
 
-            {/* Bonding Curve Configuration Button */}
+            {/* Bonding Curve Configuration Button 
             <button
               onClick={() => setShowCurveConfig(true)}
               className="w-full bg-black border border-cyber-purple/70 hover:bg-cyber-purple/10 text-cyber-purple px-4 py-3 font-terminal text-sm flex items-center justify-center space-x-2 rounded-sm transition-all duration-200 uppercase"
@@ -1526,6 +1522,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
               <Settings className="w-4 h-4" />
               <span>Configure Bonding Curve</span>
             </button>
+            */}
 
             {/* Auto-preview section - shows right after investment amount */}
             {/* PumpPortal cost preview */}
@@ -1629,7 +1626,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
               ) : (
                 <div className="flex items-center justify-center space-x-2 w-full h-full">
                   <Zap className="w-5 h-5" />
-                  <span>CREATE x COIN</span>
+                  <span>CREATE COIN</span>
                 </div>
               )}
             </button>
