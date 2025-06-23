@@ -8,6 +8,7 @@ import { Shield, AlertTriangle, ExternalLink, Zap, Key, CheckCircle } from 'luci
 interface Props {
   requestId: string;
   transactions: string[]; // base64 encoded
+  origin?: string | null;
   onClose(): void;
 }
 
@@ -26,12 +27,23 @@ const getInstructionType = (programId: PublicKey): string => {
 };
 
 // Renders a professional cyberpunk-style transaction signing modal
-export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose }) => {
+export const SignTxModal: React.FC<Props> = ({ requestId, transactions, origin, onClose }) => {
   const { activeWallet } = useStore();
   const [signing, setSigning] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
   const [parsedTransactions, setParsedTransactions] = useState<any[]>([]);
+  
+  // Check if request is from launchpad
+  const isFromLaunchpad = origin && (
+    origin.includes('localhost') ||
+    origin.includes('127.0.0.1:3001') ||
+    origin.includes('tknz.fun') ||
+    origin.includes('tknz-launchpad') ||
+    origin.includes('launchpad')
+  );
+  
+  console.log('SignTxModal - origin:', origin, 'isFromLaunchpad:', isFromLaunchpad);
 
   useEffect(() => {
     // Parse transactions to extract details
@@ -110,6 +122,14 @@ export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose 
         signedTransactions: signed.length > 1 ? signed : undefined,
       });
       onClose();
+      
+      // Auto-close extension window if transaction originated from launchpad
+      if (isFromLaunchpad) {
+        console.log('Auto-closing extension window after successful signing from launchpad');
+        setTimeout(() => {
+          window.close();
+        }, 200);
+      }
     } catch (err) {
       console.error('Signing failed', err);
       setSigning(false);
@@ -122,6 +142,14 @@ export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose 
       requestId,
     });
     onClose();
+    
+    // Also auto-close on rejection if from launchpad
+    if (isFromLaunchpad) {
+      console.log('Auto-closing extension window after rejection from launchpad');
+      setTimeout(() => {
+        window.close();
+      }, 200);
+    }
   };
 
   return (
@@ -162,7 +190,9 @@ export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose 
             {isSuccess && (
               <div className="flex items-center space-x-2 animate-slide-up">
                 <CheckCircle className="w-4 h-4 text-cyber-green" />
-                <span className="text-xs font-terminal text-cyber-green">SIGNED</span>
+                <span className="text-xs font-terminal text-cyber-green">
+                  SIGNED{isFromLaunchpad && ' - CLOSING...'}
+                </span>
               </div>
             )}
           </div>
@@ -237,9 +267,14 @@ export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose 
           {/* Warning message */}
           <div className="bg-cyber-yellow/10 border border-cyber-yellow/30 rounded-lg p-3 flex items-start space-x-2 flex-shrink-0">
             <AlertTriangle className="w-4 h-4 text-cyber-yellow mt-0.5 flex-shrink-0" />
-            <p className="text-xs font-terminal text-cyber-yellow/90">
-              Carefully review transaction details before signing. This action cannot be undone.
-            </p>
+            <div className="text-xs font-terminal text-cyber-yellow/90">
+              <p>Carefully review transaction details before signing. This action cannot be undone.</p>
+              {isFromLaunchpad && (
+                <p className="mt-1 text-cyber-green/80">
+                  ✓ Window will close automatically after signing
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -274,7 +309,7 @@ export const SignTxModal: React.FC<Props> = ({ requestId, transactions, onClose 
             ) : isSuccess ? (
               <>
                 <CheckCircle className="w-4 h-4" />
-                <span>SIGNED</span>
+                <span>SIGNED{isFromLaunchpad && ' - CLOSING'}</span>
               </>
             ) : (
               <>
