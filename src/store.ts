@@ -23,8 +23,8 @@ const APP_VERSION_API_URL = 'https://tknz.fun/.netlify/functions/version';
 const SOL_PRICE_API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd';
 // Endpoint for combined token minting + Meteora pool creation
 const CREATE_TOKEN_METEORA_API_URL = DEV_MODE
-  ? 'http://localhost:8888/.netlify/functions/create-token-meteora'
-  : 'https://tknz.fun/.netlify/functions/create-token-meteora';
+  ? 'http://localhost:8888/.netlify/functions/create-pool'
+  : 'https://tknz.fun/.netlify/functions/create-pool';
 
 const CREATE_POOL_API_URL = DEV_MODE
   ? 'http://localhost:8888/.netlify/functions/create-pool'
@@ -179,6 +179,9 @@ export const useStore = create<WalletState>((set, get) => ({
     // Build URL based on selected exchange
     let url: string;
     switch (exchange) {
+      case 'launch.tknz.fun':
+        url = 'https://launch.tknz.fun/token/';
+        break;
       case 'birdeye':
       case 'birdeye.so':
         url = 'https://birdeye.so/token/';
@@ -1371,6 +1374,8 @@ export const useStore = create<WalletState>((set, get) => ({
     }
     // Log event for analytics
     try { logEventToFirestore('token_launched', { walletAddress: activeWallet.publicKey, contractAddress: data.mint }); } catch {}
+    try { await get().addCreatedCoin({ address: data.mint, walletAddress: activeWallet.publicKey, name, ticker, launchpadUrl: `https://launch.tknz.fun/token/${data.mint}`, balance: 0 }); } catch {}
+
     // Return relevant details
     return {
       signatureMint,
@@ -1417,6 +1422,9 @@ export const useStore = create<WalletState>((set, get) => ({
     if (transactions.length === 0) {
       throw new Error('Expected at least one transaction from server (got none)');
     }
+
+    const { name, ticker } = tokenMetadata;
+
     // 1) Build, sign, and simulate all transactions before sending
     const txObjs: VersionedTransaction[] = transactions.map((txBase64: string) => {
       const tx = VersionedTransaction.deserialize(Buffer.from(txBase64, 'base64'));
@@ -1446,6 +1454,7 @@ export const useStore = create<WalletState>((set, get) => ({
     try {
       logEventToFirestore('token_launched', { walletAddress: activeWallet.publicKey, contractAddress: mint });
     } catch {}
+    try { await get().addCreatedCoin({ address: data.mint, walletAddress: activeWallet.publicKey, name, ticker, launchpadUrl: `https://launch.tknz.fun/token/${data.mint}`, balance: 0 }); } catch {}
     // Return result details
     return {
       signatureMint,
