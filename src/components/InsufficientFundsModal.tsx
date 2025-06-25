@@ -66,7 +66,7 @@ export const InsufficientFundsModal: React.FC<InsufficientFundsModalProps> = ({ 
         <div className="p-5">
           <p className="mb-5 leading-relaxed">
             <span className="animate-blink inline-block">&gt;</span>{" "}
-            Need <span className="font-bold">0.03 SOL</span> to create a meme coin. Current balance:{" "}
+            Need <span className="font-bold">0.01 SOL</span> to create a meme coin. Current balance:{" "}
             <span className="font-bold">{balance.toFixed(2)} SOL</span>
           </p>
 
