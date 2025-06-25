@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.24.0](https://github.com/tknzdev/tknz-monorepo/compare/v0.23.0...v0.24.0) (2025-06-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **components:** None
+
+### Features
+
+* Add ability to track sign request origin in App component ([4b75e68](https://github.com/tknzdev/tknz-monorepo/commit/4b75e683837c1b2749d0208a5393d4f28fa76c24))
+* **background:** add origin to message object when showing sign transaction/dialog ([80f8d8d](https://github.com/tknzdev/tknz-monorepo/commit/80f8d8d2774bb6e881db03ea99a69bde2b462330))
+* **components:** add origin prop to SignTxModal component ([2427132](https://github.com/tknzdev/tknz-monorepo/commit/2427132ae3b17812866ec62d06b2f7aca9e680f4))
+
 ## [0.23.0](https://github.com/tknzdev/tknz-monorepo/compare/v0.22.0...v0.23.0) (2025-06-23)
 
 
