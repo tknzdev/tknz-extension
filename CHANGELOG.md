@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.24.1](https://github.com/tknzdev/tknz-monorepo/compare/v0.24.0...v0.24.1) (2025-06-25)
+
+
+### Features
+
+* **components:** Add platform fee and update balance calculation ([4115f31](https://github.com/tknzdev/tknz-monorepo/commit/4115f31d3484cddf1d4c7be7a27505c00d1e0ead))
+* **InsufficientFundsModal:** Update required SOL amount to create meme coin ([4680a9e](https://github.com/tknzdev/tknz-monorepo/commit/4680a9e84853c0fb80a28c57f2ccec67836112d0))
+* **manifest.json:** update description to create meme coins directly from news articles. Powered by Meteora. ([0fb4c0b](https://github.com/tknzdev/tknz-monorepo/commit/0fb4c0b526f288fea0e4fb4555d9eab6fdbb4501))
+* Update coin creation fee to be 0.01 SOL instead of 0.02 SOL ([20ce52a](https://github.com/tknzdev/tknz-monorepo/commit/20ce52ab75db793ec053236ea06a71afaeaaf7b0))
+
+
+### Bug Fixes
+
+* **WalletPageCyber:** Update required amount for each coin creation ([5114c63](https://github.com/tknzdev/tknz-monorepo/commit/5114c632aaad6fbf43858000585aea98b47cbb1d))
+
 ## [0.24.0](https://github.com/tknzdev/tknz-monorepo/compare/v0.23.0...v0.24.0) (2025-06-25)
 
 

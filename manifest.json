@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TKNZ",
-  "version": "0.24.0",
+  "version": "0.24.1",
   "description": "Create meme coins directly from news articles. Powered by Meteora.",
   "permissions": [
     "activeTab",
