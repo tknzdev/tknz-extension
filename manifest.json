@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "TKNZ",
   "version": "0.24.0",
-  "description": "Create meme coins on Pump.fun directly from news articles",
+  "description": "Create meme coins directly from news articles. Powered by Meteora.",
   "permissions": [
     "activeTab",
     "storage",
