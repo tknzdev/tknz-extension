@@ -575,23 +575,11 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
   const handleInvestmentChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
     const formatted = formatSolAmount(rawValue);
-    
-    // Always update the input value to preserve user's typing (including trailing zeros)
     setInvestmentInputValue(formatted);
     
-    // Parse for numeric value
-    const numValue = parseFloat(formatted);
+    const numValue = parseFloat(formatted) || 0;
     
-    if (formatted === '' || formatted === '.' || isNaN(numValue)) {
-      setInvestmentAmount(0);
-      return;
-    }
-    
-    if (numValue > 85) {
-      setError('Maximum investment amount is 85 SOL');
-      setInvestmentAmount(85);
-      setInvestmentInputValue('85');
-    } else if (numValue < 0) {
+    if (numValue < 0) {
       setInvestmentAmount(0);
       setInvestmentInputValue('0');
     } else {
@@ -723,8 +711,8 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
     });
   }
 
-  const PUMP_FEE = 0.01;
-  const requiredBalance = useMemo(() => investmentAmount + PUMP_FEE, [investmentAmount]);
+  const PUMP_FEE = 0.01; // Platform fee
+  const requiredBalance = PUMP_FEE; // Only need fee for creation, buy amount is optional
 
   // Progress animation effect for the terminal loading
   useEffect(() => {
@@ -977,7 +965,7 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
     const currentBalance = useStore.getState().nativeSolBalance;
     if (currentBalance < requiredBalance) {
       setInsufficientFunds(true);
-      setError(`Insufficient balance. Please add at least ${requiredBalance.toFixed(2)} SOL to your wallet (${investmentAmount} SOL for investment + 0.03 SOL for fees).`);
+      setError(`Insufficient balance. Please add at least ${PUMP_FEE} SOL to your wallet for the creation fee.`);
       return;
     }
 
@@ -1489,27 +1477,19 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
                       value={investmentInputValue}
                       onChange={handleInvestmentChange}
                       onWheel={(e) => e.currentTarget.blur()} // Prevent scroll
-                      className={`input-field w-full font-terminal pr-16 text-lg ${investmentAmount > 85 ? 'border-cyber-pink' : ''}`}
-                      placeholder="0.00"
+                      className="input-field w-full font-terminal pr-16 text-lg"
+                      placeholder="0"
                     />
                       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-2 pointer-events-none">
-                      {investmentAmount > 85 && (
-                        <AlertCircle className="w-5 h-5 text-cyber-pink" />
-                      )}
-                      <span className="text-cyber-green font-terminal font-bold text-lg">{ticker?.toUpperCase()}</span>
+                      <span className="text-cyber-green font-terminal font-bold text-lg">{ticker?.toUpperCase() || 'TOKENS'}</span>
                     </div>
                   </div>
-                  {investmentAmount > 0 && solPriceUsd > 0 && (
-                    <div className="text-xs text-cyber-green/60 font-terminal mt-1">
-                      ≈ ${(investmentAmount * solPriceUsd).toFixed(2)} USD
-                    </div>
-                  )}
                 </div>
               </div>
 
               {balance < requiredBalance && (
                 <div className="text-xs text-cyber-pink mt-1 font-terminal">
-                  Add at least {requiredBalance.toFixed(2)} SOL to create a coin
+                  Add at least {PUMP_FEE} SOL for the creation fee
                 </div>
               )}
             </div>
@@ -1802,3 +1782,4 @@ export const CoinCreator: React.FC<CoinCreatorProps> = ({
 };
 
 export default CoinCreator;
+
