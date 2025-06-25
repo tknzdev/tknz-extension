@@ -165,10 +165,9 @@ export const WalletPageCyber: React.FC<WalletPageCyberProps> = ({ highlightCoinA
                 <button className="ml-2 text-xl text-cyber-purple font-bold">$</button>
             </div>
             <p className="text-white/70 text-xs font-terminal mb-3">
-                This amount + 0.03 SOL will be required for each coin creation:
+                This amount + 0.01 SOL will be required for each coin creation:
             </p>
             <ul className="text-white/70 text-xs font-terminal space-y-1 list-inside list-disc">
-                <li>0.02 SOL Pump.fun fee</li>
                 <li>0.01 SOL transaction fee</li>
             </ul>
             </div>
