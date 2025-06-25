@@ -81,9 +81,8 @@ export const WalletPage: React.FC = () => {
           <span className="text-sm font-medium text-gray-600">SOL</span>
         </div>
         <div className="space-y-2 text-xs text-gray-500">
-          <p>This amount + 0.03 SOL will be required for each coin creation:</p>
-          <ul className="list-disc list-inside pl-2 space-y-1">
-            <li>0.02 SOL Pump.fun fee</li>
+          <p>This amount + 0.01 SOL will be required for each coin creation:</p>
+          <ul>
             <li>0.01 SOL transaction fee</li>
           </ul>
         </div>
